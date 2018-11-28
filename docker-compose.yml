@@ -1,0 +1,72 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_USER_FILE=/run/secrets/pg_username
+      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_password
+    secrets:
+      - pg_username
+      - pg_password
+    deploy:
+      replicas: 1
+    volumes:
+      - pgdata:/var/lib/postgresql/data/
+
+  nginx:
+      image: nginx:django
+      ports:
+        - "8080:80"
+      depends_on:
+        - web
+      deploy:
+        replicas: 1
+        restart_policy:
+          condition: on-failure
+      volumes:
+        # bind mounting
+        - ./src:/api
+        - ./log:/var/log/nginx
+      configs:
+        - nginx
+        - my_nginx
+
+  web:
+    image: python:django
+    # command: uwsgi  --emperor uwsgi.ini
+    command: uwsgi --ini uwsgi.ini
+    volumes:
+      # bind mounting
+      - ./src:/api
+    ports:
+      - "8002:8000"
+    depends_on:
+      - db
+    environment:
+      - POSTGRES_USER_FILE=/run/secrets/pg_username
+      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_password
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    secrets:
+      - pg_username
+      - pg_password
+
+secrets:
+    pg_username:
+        external: True
+        #file: ./pg_username.txt
+    pg_password:
+        external: True
+        #file: ./pg_password.txt
+
+configs:
+  nginx:
+    external: true
+  my_nginx:
+    external: true
+
+volumes:
+    pgdata:
