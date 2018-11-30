@@ -17,17 +17,20 @@ services:
   nginx:
       image: nginx:django
       ports:
-        - "8080:80"
+        - 80:80
+        - 443:443
       depends_on:
         - web
       deploy:
-        replicas: 1
-        restart_policy:
-          condition: on-failure
+        mode: global
+        placement:
+          constraints:
+            - node.role == manager
       volumes:
         # bind mounting
         - ./src:/api
         - ./log:/var/log/nginx
+        - /etc/letsencrypt:/etc/letsencrypt
       configs:
         - nginx
         - my_nginx
