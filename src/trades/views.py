@@ -14,7 +14,10 @@ def sample(request):
     data = {
         'username': 'viewer'
     }
+    ticket = []
     res = requests.post(url, data=data, verify=False)
-    ticket = res.text
+    ticket.append(res.text)
+    res = requests.post(url, data=data, verify=False)
+    ticket.append(res.text)
 
     return render(request, 'sample.html', locals())
